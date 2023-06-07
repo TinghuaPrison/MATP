@@ -1,1 +1,1 @@
-const String serverIP = 'http://localhost:8000/';
+const String serverIP = 'http://39.101.74.64:8000/';

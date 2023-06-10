@@ -8,8 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/user.dart';
 
 class NewHomePage extends StatefulWidget {
+  const NewHomePage({super.key});
+
   @override
-  _NewHomePageState createState() => _NewHomePageState();
+  State<NewHomePage> createState() => _NewHomePageState();
 }
 
 class _NewHomePageState extends State<NewHomePage> {

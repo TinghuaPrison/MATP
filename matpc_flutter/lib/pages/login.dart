@@ -6,8 +6,10 @@ import 'package:matpc_flutter/pages/index.dart';
 import 'package:matpc_flutter/pages/register.dart';
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
-  _LoginPageState createState() => _LoginPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
@@ -43,74 +45,70 @@ class _LoginPageState extends State<LoginPage> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('username', usernameController.text);
       prefs.setString('password', passwordController.text);
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('成功'),
-          content: Text('登录成功'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (contex) => IndexPage()),
-                );
-              },
-              child: Text('确定'),
-            ),
-          ],
-        ),
-      );
+      _showDialog('成功', '登录成功', onSuccess: true);
     } catch (e) {
-      print(e);
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('错误'),
-          content: Text('登录失败'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('确定'),
-            ),
-          ],
-        ),
-      );
+      _showDialog('失败', '登录失败');
     }
+  }
+
+  _showDialog(String title, String content, {bool onSuccess = false}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (onSuccess) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const IndexPage()),
+                );
+              }
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text('登录'),
+        title: const Text('登录'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: usernameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: '用户名',
+                border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: '密码',
+                border: OutlineInputBorder(),
               ),
               obscureText: true,
             ),
-            SizedBox(height: 24.0),
+            const SizedBox(height: 24.0),
             ElevatedButton(
               onPressed: _login,
-              child: Text('登录'),
+              child: const Text('登录'),
             ),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -118,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                   MaterialPageRoute(builder: (context) => RegisterScreen()),
                 );
               },
-              child: Text('注册'),
+              child: const Text('注册'),
             ),
           ],
         ),

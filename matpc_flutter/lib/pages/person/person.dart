@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import 'package:matpc_flutter/domain/moment.dart';
 import 'package:matpc_flutter/const/const.dart';
 import 'package:matpc_flutter/domain/user.dart';
+import 'package:matpc_flutter/pages/person/favorited_moment.dart';
 import 'package:matpc_flutter/pages/person/followee_list.dart';
+import 'package:matpc_flutter/pages/person/notification_list.dart';
 import 'package:matpc_flutter/pages/person/profile_edit.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +27,7 @@ class PersonPage extends StatelessWidget {
             PopupMenuButton<String>(
               onSelected: (value) => handleClick(value, context),
               itemBuilder: (BuildContext context) {
-                return {'编辑个人信息', '登出账号'}.map((String choice) {
+                return {'编辑个人信息', '登出账号', '通知消息列表'}.map((String choice) {
                   return PopupMenuItem<String>(
                     value: choice,
                     child: Text(choice),
@@ -34,12 +36,13 @@ class PersonPage extends StatelessWidget {
               },
             ),
           ],
-          title: Text('个人主页'),
+          title: const Text('个人主页'),
+          centerTitle: true,
         ),
         body: CustomScrollView(
           slivers: <Widget>[
             SliverToBoxAdapter(child: UserSection(key: userSectionController,)),
-            SliverToBoxAdapter(child: ButtonSection()),
+            const SliverToBoxAdapter(child: ButtonSection()),
             MomentSection(key: momentSectionController,),
           ],
         ),
@@ -52,7 +55,7 @@ class PersonPage extends StatelessWidget {
       case '编辑个人信息':
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => EditProfilePage()),
+          MaterialPageRoute(builder: (context) => const EditProfilePage()),
         ).then((value) => {
           userSectionController.currentState?.fetchUser(),
           momentSectionController.currentState?.fetchMoments(),
@@ -60,6 +63,12 @@ class PersonPage extends StatelessWidget {
         break;
       case '登出账号':
         // 执行登出账号的操作
+        break;
+      case '通知消息列表':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationListPage()),
+        );
         break;
     }
   }
@@ -69,7 +78,7 @@ class UserSection extends StatefulWidget {
   const UserSection({Key? key}) : super(key: key);
 
   @override
-  _UserSectionState createState() => _UserSectionState();
+  State<UserSection> createState() => _UserSectionState();
 }
 
 class _UserSectionState extends State<UserSection> {
@@ -99,54 +108,63 @@ class _UserSectionState extends State<UserSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (user != null) {
-      return UserItem(user!);
-    } else {
-      return SizedBox(height: 177,);
-    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey[400]!))
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: user != null ? UserItem(user!) : const SizedBox(height: 177,),
+      ),
+    );
   }
 }
 
 class ButtonSection extends StatelessWidget {
+  const ButtonSection({super.key});
+
+  Widget buildButton(BuildContext context, IconData icon, String label, Widget destination) {
+    return TextButton(
+      style: TextButton.styleFrom(
+        foregroundColor: Theme.of(context).primaryColor,
+        padding: const EdgeInsets.all(16.0),
+      ),
+      onPressed: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => destination));
+      },
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          Icon(icon, size: 36.0,),
+          const SizedBox(height: 8.0),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 16.0),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: <Widget>[
-        TextButton(
-          onPressed: () {
-            Navigator.push(context,
-            MaterialPageRoute(builder: (context) => FolloweeListPage()));
-          },
-          child: Column(
-            children: <Widget>[
-              Icon(Icons.group),
-              Text('关注'),
-            ],
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.grey[400]!))
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            buildButton(context, Icons.group, '关注', const FolloweeListPage()),
+            buildButton(context, Icons.person, '粉丝', const FollowerListPage()),
+            buildButton(context, Icons.bookmark_added, '收藏', const FavoriteMomentsPage()),
+          ],
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => FollowerListPage()));
-          },
-          child: Column(
-            children: <Widget>[
-              Icon(Icons.person),
-              Text('粉丝'),
-            ],
-          ),
-        ),
-        TextButton(
-          onPressed: () {},
-          child: Column(
-            children: <Widget>[
-              Icon(Icons.block),
-              Text('黑名单'),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -155,7 +173,7 @@ class MomentSection extends StatefulWidget {
   const MomentSection({Key? key}) : super(key: key);
 
   @override
-  _MomentSectionState createState() => _MomentSectionState();
+  State<MomentSection> createState() => _MomentSectionState();
 }
 
 class _MomentSectionState extends State<MomentSection> {
@@ -171,7 +189,7 @@ class _MomentSectionState extends State<MomentSection> {
   Future<void> fetchMoments() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? username = prefs.getString('username');
-    FormData formData = new FormData.fromMap({
+    FormData formData = FormData.fromMap({
       'username': username,
       'sorted_by': 'user',
     });
@@ -187,8 +205,8 @@ class _MomentSectionState extends State<MomentSection> {
     for (var moment in momentsList) {
       newFollowStatus[moment.user.username] = (moment.followed == 1);
     }
-    Provider.of<UserProvider>(context, listen: false).updateFollowStatus(newFollowStatus);
     setState(() {
+      Provider.of<UserProvider>(context, listen: false).updateFollowStatus(newFollowStatus);
       moments = momentsList;
     });
   }
@@ -196,12 +214,15 @@ class _MomentSectionState extends State<MomentSection> {
   @override
   Widget build(BuildContext context) {
     if (moments.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink(),);
+      return const SliverToBoxAdapter(child: SizedBox.shrink(),);
     } else {
       return SliverList(
         delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
-            return MomentItem(moments[index]);
+            return Padding(
+              padding: EdgeInsets.only(left: 16.0, right: 16.0, top: (index == 0) ? 16.0 : 0.0, bottom: 16.0),
+              child: MomentItem(moments[index]),
+            );
           },
           childCount: moments.length,
         ),

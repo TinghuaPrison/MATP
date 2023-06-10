@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_share/flutter_share.dart';
 import 'package:matpc_flutter/domain/moment.dart';
 import 'package:matpc_flutter/domain/comment.dart';
 import 'package:dio/dio.dart';
@@ -34,6 +35,14 @@ class _MomentDetailState extends State<MomentDetail> {
         _commentFocusNode.requestFocus();
       });
     }
+  }
+
+  Future<void> shareMoment() async {
+    await FlutterShare.share(
+        title: '分享动态',
+        text: widget.moment.content,
+        chooserTitle: '选择应用分享'
+    );
   }
 
   Future<void> _fetchComments() async {
@@ -77,6 +86,12 @@ class _MomentDetailState extends State<MomentDetail> {
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text('Moment Detail'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: shareMoment,
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -84,7 +99,7 @@ class _MomentDetailState extends State<MomentDetail> {
             children: <Widget>[
               MomentItemWithoutFollow(widget.moment),
               ...comments.map((comment) => CommentItem(comment)).toList(),
-              SizedBox(height: 100,),
+              const SizedBox(height: 100,),
             ],
           ),
 

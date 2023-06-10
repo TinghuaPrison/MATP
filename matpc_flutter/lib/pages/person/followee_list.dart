@@ -5,12 +5,15 @@ import 'package:matpc_flutter/const/const.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FolloweeListPage extends StatefulWidget {
+  const FolloweeListPage({super.key});
+
   @override
-  _FolloweeListPageState createState() => _FolloweeListPageState();
+  State<FolloweeListPage> createState() => _FolloweeListPageState();
 }
 
 class _FolloweeListPageState extends State<FolloweeListPage> {
   List<User> users = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -19,6 +22,10 @@ class _FolloweeListPageState extends State<FolloweeListPage> {
   }
 
   Future<void> fetchUsers() async {
+    setState(() {
+      isLoading = true;
+    });
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedUsername = prefs.getString('username');
     final formData = FormData.fromMap({
@@ -32,6 +39,7 @@ class _FolloweeListPageState extends State<FolloweeListPage> {
 
     setState(() {
       users = usersList;
+      isLoading = false;
     });
   }
 
@@ -39,15 +47,24 @@ class _FolloweeListPageState extends State<FolloweeListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('关注'),
+        title: const Text('关注'),
       ),
-      body: RefreshIndicator(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
         onRefresh: fetchUsers,
         child: ListView.builder(
-          itemCount: users.length,
+          itemCount: users.isEmpty ? 1 : users.length,
           itemBuilder: (BuildContext context, int index) {
-            User user= users[index];
-            return UserRow(user);
+            if (users.isEmpty) {
+              return const Center(child: Text("没有关注任何人"));
+            } else {
+              User user = users[index];
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: UserRow(user),
+              );
+            }
           },
         ),
       ),

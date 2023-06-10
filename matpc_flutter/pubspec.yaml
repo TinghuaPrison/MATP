@@ -42,6 +42,12 @@ dependencies:
   geocoding: ^2.1.0
   video_player: ^2.6.1
   provider: ^6.0.5
+  cached_network_image: ^3.2.3
+  flutter_image_compress: ^2.0.3
+  intl: ^0.18.1
+  flutter_local_notifications: ^14.1.1
+  flutter_quill: ^6.4.4
+  flutter_share: ^2.0.0
 
 dev_dependencies:
   flutter_test:

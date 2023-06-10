@@ -4,8 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:matpc_flutter/const/const.dart';
 import 'package:matpc_flutter/domain/user.dart';
 import 'package:matpc_flutter/domain/moment.dart';
+import 'package:matpc_flutter/pages/message/sessions.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../message/session.dart';
 
 class OtherPersonPage extends StatelessWidget {
   OtherPersonPage({Key? key, required this.otherUser}) : super(key: key);
@@ -70,7 +73,7 @@ class _UserSectionState extends State<UserSection> {
     if (user != null) {
       return UserItem(user!);
     } else {
-      return SizedBox(height: 177,);
+      return const SizedBox(height: 177,);
     }
   }
 }
@@ -135,7 +138,7 @@ class _ButtonSectionState extends State<ButtonSection> {
           child: Column(
             children: <Widget>[
               Icon(!followed ? Icons.star_border : Icons.star),
-              !followed ? Text('关注') : Text('已关注'),
+              !followed ? const Text('关注') : const Text('已关注'),
             ],
           ),
         ),
@@ -144,7 +147,7 @@ class _ButtonSectionState extends State<ButtonSection> {
           child: Column(
             children: <Widget>[
               Icon(!blocked ? Icons.block_flipped : Icons.block_rounded),
-              !blocked ? Text('拉黑') : Text('已拉黑'),
+              !blocked ? const Text('拉黑') : const Text('已拉黑'),
             ],
           ),
         ),
@@ -152,11 +155,14 @@ class _ButtonSectionState extends State<ButtonSection> {
           onPressed: () {
             // 实现私信功能
           },
-          child: Column(
-            children: <Widget>[
-              Icon(Icons.email),
-              Text('私信'),
-            ],
+          child: InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SessionPage(targetUsername: widget.otherUser,))),
+            child: Column(
+              children: const <Widget>[
+                Icon(Icons.email),
+                Text('私信'),
+              ],
+            ),
           ),
         ),
       ],
@@ -184,7 +190,7 @@ class _MomentSectionState extends State<MomentSection> {
   }
 
   Future<void> fetchMoments() async {
-    FormData formData = new FormData.fromMap({
+    FormData formData = FormData.fromMap({
       'username': widget.username,
       'sorted_by': 'user',
     });
@@ -209,7 +215,7 @@ class _MomentSectionState extends State<MomentSection> {
   @override
   Widget build(BuildContext context) {
     if (moments.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink(),);
+      return const SliverToBoxAdapter(child: SizedBox.shrink(),);
     } else {
       return SliverList(
         delegate: SliverChildBuilderDelegate(

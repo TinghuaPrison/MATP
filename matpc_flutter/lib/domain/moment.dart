@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:matpc_flutter/const/const.dart';
@@ -6,6 +9,8 @@ import 'package:matpc_flutter/pages/home/moment_details.dart';
 import 'package:matpc_flutter/pages/person/other_person.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import '../utils/utils.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
 
 class Moment {
   final int id;
@@ -78,7 +83,9 @@ class _MomentItemState extends State<MomentItem> {
     });
     Response response = await dio.post('${serverIP}follow/', data: formData);
     if (response.statusCode == 200) {
-      Provider.of<UserProvider>(context, listen: false).followUser(widget.moment.user.username);
+      setState(() {
+        Provider.of<UserProvider>(context, listen: false).followUser(widget.moment.user.username);
+      });
     }
   }
 
@@ -151,73 +158,110 @@ class _MomentItemState extends State<MomentItem> {
     bool isFavorited = userProvider.favoriteStatus[widget.moment.id] ?? false;
     int favoriteCount = userProvider.favoriteCounts[widget.moment.id] ?? 0;
     int commentCount = userProvider.commentCounts[widget.moment.id] ?? 0;
+
     return Card(
-      margin: EdgeInsets.all(8.0),
+      margin: const EdgeInsets.all(16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
+            contentPadding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
             leading: InkWell(
               highlightColor: Colors.transparent,
               radius: 0.0,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => OtherPersonPage(otherUser: widget.moment.user.username,))),
               child: CircleAvatar(
-                backgroundImage: NetworkImage(serverIP + widget.moment.user.avatar),
+                radius: 30,
+                backgroundImage: CachedNetworkImageProvider(serverIP + widget.moment.user.avatar),
               ),
             ),
             title: InkWell(
                 highlightColor: Colors.transparent,
                 radius: 0.0,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => OtherPersonPage(otherUser: widget.moment.user.username,))),
-                child: Text(widget.moment.user.username, style: TextStyle(fontWeight: FontWeight.bold))
+                child: Text(widget.moment.user.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
             ),
-            subtitle: Text(widget.moment.c_time),
+            subtitle: Text(widget.moment.c_time, style: TextStyle(color: Colors.grey[600])),
             trailing: followed
                 ? ElevatedButton(
               onPressed: null,
-              child: Text('已关注'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
+              child: const Text('已关注'),
             )
                 : ElevatedButton(
               onPressed: _follow,
-              child: Text('关注'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text('关注'),
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 InkWell(
-                  highlightColor: Colors.transparent,
-                  radius: 0.0,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MomentDetail(widget.moment))),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: double.infinity),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Chip(
-                          label: Text(widget.moment.type),
-                        ),
-                        SizedBox(height: 8.0),
-                        Text(widget.moment.content, maxLines: 3, softWrap: true, overflow: TextOverflow.ellipsis,),
-                        if (widget.moment.media.toString() != 'null')
-                          Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Image.network(
-                              serverIP + widget.moment.media,
-                              fit: BoxFit.cover,
+                    highlightColor: Colors.transparent,
+                    radius: 0.0,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MomentDetail(widget.moment))),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minWidth: double.infinity),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          if (widget.moment.location.toString() != '未分类')
+                            Chip(
+                              label: Text(widget.moment.type, style: const TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.blue,
                             ),
-                          ),
-                        Text(widget.moment.location),
-                      ]
-                    ),
-                  )
+                          const SizedBox(height: 8.0),
+                          quill.QuillEditor(
+                              controller: quill.QuillController(document: quill.Document.fromDelta(quill.Delta.fromJson(jsonDecode(widget.moment.content))), selection: const TextSelection.collapsed(offset: 0),),
+                              scrollController: ScrollController(),
+                              scrollable: true,
+                              focusNode: FocusNode(),
+                              autoFocus: false,
+                              readOnly: true,
+                              enableInteractiveSelection: false,
+                              placeholder: 'What\'s happening?',
+                              expands: false,
+                              padding: const EdgeInsets.all(10.0),
+                            ),
+                          if (widget.moment.media.toString() != 'null')
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: SizedBox(
+                                width: MediaQuery.of(context).size.width * 0.7,
+                                height: MediaQuery.of(context).size.width * 0.7,
+                                child: _displayMedia(serverIP + widget.moment.media),
+                              ),
+                            ),
+                          const SizedBox(height: 8.0,),
+                          if (widget.moment.location.toString() != 'null')
+                            Row(
+                                children: [
+                                  const Icon(Icons.location_on_outlined, color: Colors.blue),
+                                  Text(widget.moment.location, style: TextStyle(color: Colors.grey[600])),
+                                ]
+                            ),
+                        ],
+                      ),
+                    )
                 ),
-                Divider(),
+                const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
@@ -225,8 +269,8 @@ class _MomentItemState extends State<MomentItem> {
                       onPressed: isLiked ? _unlikeMoment : _likeMoment,
                       child: Row(
                         children: <Widget>[
-                          Icon(!isLiked ? Icons.thumb_up_off_alt : Icons.thumb_up),
-                          Text(likeCount.toString()),
+                          Icon(!isLiked ? Icons.thumb_up_off_alt : Icons.thumb_up, color: Colors.blue),
+                          Text(likeCount.toString(), style: const TextStyle(color: Colors.blue)),
                         ],
                       ),
                     ),
@@ -234,8 +278,8 @@ class _MomentItemState extends State<MomentItem> {
                       onPressed: isFavorited ? _unfavoriteMoment : _favoriteMoment,
                       child: Row(
                         children: <Widget>[
-                          Icon(!isFavorited ? Icons.bookmark_add : Icons.bookmark),
-                          Text(favoriteCount.toString()),
+                          Icon(!isFavorited ? Icons.bookmark_add : Icons.bookmark, color: Colors.blue),
+                          Text(favoriteCount.toString(), style: const TextStyle(color: Colors.blue)),
                         ],
                       ),
                     ),
@@ -243,8 +287,8 @@ class _MomentItemState extends State<MomentItem> {
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MomentDetail(widget.moment, focusComment: true))),
                       child: Row(
                         children: <Widget>[
-                          Icon(Icons.comment),
-                          Text(commentCount.toString()),
+                          const Icon(Icons.comment, color: Colors.blue),
+                          Text(commentCount.toString(), style: const TextStyle(color: Colors.blue)),
                         ],
                       ),
                     ),
@@ -336,44 +380,81 @@ class _MomentItemWithoutFollowState extends State<MomentItemWithoutFollow> {
   @override
   Widget build(BuildContext context) {
     UserProvider userProvider = Provider.of<UserProvider>(context, listen: true);
-    bool followed = userProvider.followStatus[widget.moment.user.username] ?? false;
     bool isLiked = userProvider.likedStatus[widget.moment.id] ?? false;
     int likeCount = userProvider.likeCounts[widget.moment.id] ?? 0;
     bool isFavorited = userProvider.favoriteStatus[widget.moment.id] ?? false;
     int favoriteCount = userProvider.favoriteCounts[widget.moment.id] ?? 0;
     int commentCount = userProvider.commentCounts[widget.moment.id] ?? 0;
+
     return Card(
-      margin: EdgeInsets.all(8.0),
+      margin: const EdgeInsets.all(16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 4,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ListTile(
-            leading: CircleAvatar(
-              backgroundImage: NetworkImage(serverIP + widget.moment.user.avatar),
+            contentPadding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+            leading: InkWell(
+              highlightColor: Colors.transparent,
+              radius: 0.0,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => OtherPersonPage(otherUser: widget.moment.user.username,))),
+              child: CircleAvatar(
+                radius: 30,
+                backgroundImage: CachedNetworkImageProvider(serverIP + widget.moment.user.avatar),
+              ),
             ),
-            title: Text(widget.moment.user.username, style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(widget.moment.c_time),
+            title: InkWell(
+                highlightColor: Colors.transparent,
+                radius: 0.0,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => OtherPersonPage(otherUser: widget.moment.user.username,))),
+                child: Text(widget.moment.user.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
+            ),
+            subtitle: Text(widget.moment.c_time, style: TextStyle(color: Colors.grey[600])),
           ),
           Padding(
-            padding: EdgeInsets.all(8.0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Chip(
-                  label: Text(widget.moment.type),
+                if (widget.moment.type.toString() != '未分类')
+                  Chip(
+                    label: Text(widget.moment.type, style: const TextStyle(color: Colors.white)),
+                    backgroundColor: Colors.blue,
+                  ),
+                const SizedBox(height: 8.0),
+                quill.QuillEditor(
+                  controller: quill.QuillController(document: quill.Document.fromDelta(quill.Delta.fromJson(jsonDecode(widget.moment.content))), selection: const TextSelection.collapsed(offset: 0),),
+                  scrollController: ScrollController(),
+                  scrollable: true,
+                  focusNode: FocusNode(),
+                  autoFocus: false,
+                  readOnly: true,
+                  enableInteractiveSelection: false,
+                  placeholder: 'What\'s happening?',
+                  expands: false,
+                  padding: const EdgeInsets.all(10.0),
                 ),
-                SizedBox(height: 8.0),
-                Text(widget.moment.content,),
                 if (widget.moment.media.toString() != 'null')
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Image.network(
-                      serverIP + widget.moment.media,
-                      fit: BoxFit.cover,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.7,
+                      height: MediaQuery.of(context).size.width * 0.7,
+                      child: _displayMedia(serverIP + widget.moment.media),
                     ),
                   ),
-                Text(widget.moment.location),
-                Divider(),
+                const SizedBox(height: 8.0,),
+                if (widget.moment.location.toString() != 'null')
+                  Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: Colors.blue),
+                        Text(widget.moment.location, style: TextStyle(color: Colors.grey[600])),
+                      ]
+                  ),
+                const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
@@ -381,8 +462,8 @@ class _MomentItemWithoutFollowState extends State<MomentItemWithoutFollow> {
                       onPressed: isLiked ? _unlikeMoment : _likeMoment,
                       child: Row(
                         children: <Widget>[
-                          Icon(!isLiked ? Icons.thumb_up_off_alt : Icons.thumb_up),
-                          Text(likeCount.toString()),
+                          Icon(!isLiked ? Icons.thumb_up_off_alt : Icons.thumb_up, color: Colors.blue),
+                          Text(likeCount.toString(), style: const TextStyle(color: Colors.blue)),
                         ],
                       ),
                     ),
@@ -390,8 +471,8 @@ class _MomentItemWithoutFollowState extends State<MomentItemWithoutFollow> {
                       onPressed: isFavorited ? _unfavoriteMoment : _favoriteMoment,
                       child: Row(
                         children: <Widget>[
-                          Icon(!isFavorited ? Icons.bookmark_add : Icons.bookmark),
-                          Text(favoriteCount.toString()),
+                          Icon(!isFavorited ? Icons.bookmark_add : Icons.bookmark, color: Colors.blue),
+                          Text(favoriteCount.toString(), style: const TextStyle(color: Colors.blue)),
                         ],
                       ),
                     ),
@@ -399,8 +480,8 @@ class _MomentItemWithoutFollowState extends State<MomentItemWithoutFollow> {
                       onPressed: () { },
                       child: Row(
                         children: <Widget>[
-                          Icon(Icons.comment),
-                          Text(commentCount.toString()),
+                          const Icon(Icons.comment, color: Colors.blue),
+                          Text(commentCount.toString(), style: const TextStyle(color: Colors.blue)),
                         ],
                       ),
                     ),
@@ -412,5 +493,20 @@ class _MomentItemWithoutFollowState extends State<MomentItemWithoutFollow> {
         ],
       ),
     );
+  }
+}
+
+Widget _displayMedia(String mediaUrl) {
+  String fileExtension = mediaUrl.split('.').last;
+
+  List<String> imageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+  List<String> videoExtensions = ['mp4', 'avi', 'mov'];
+
+  if (imageExtensions.contains(fileExtension)) {
+    return CachedNetworkImage(imageUrl: mediaUrl,);
+  } else if (videoExtensions.contains(fileExtension)) {
+    return VideoPlayerWidget(url: mediaUrl,);
+  } else {
+    return const Text('Unknown media type');
   }
 }

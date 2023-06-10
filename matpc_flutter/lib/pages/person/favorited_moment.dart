@@ -7,30 +7,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../domain/user.dart';
 
-class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+class FavoriteMomentsPage extends StatefulWidget {
+  const FavoriteMomentsPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  State<FavoriteMomentsPage> createState() => _FavoriteMomentsPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
-  List<Moment> moments = [];
+class _FavoriteMomentsPageState extends State<FavoriteMomentsPage> {
+  List<Moment> favoriteMoments = [];
 
   @override
   void initState() {
     super.initState();
+    fetchFavoriteMoments();
   }
 
-  Future<void> fetchMoments(String query) async {
+  Future<void> fetchFavoriteMoments() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     final username = sharedPreferences.getString('username');
     final formData = FormData.fromMap({
       'username': username,
-      'query': query,
     });
     Dio dio = Dio();
-    Response response = await dio.post('${serverIP}search_moment/', data: formData);
+    Response response = await dio.post('${serverIP}get_favorite_moments/', data: formData);
     if (response.statusCode == 201) {
       return;
     }
@@ -50,47 +50,24 @@ class _SearchPageState extends State<SearchPage> {
     }
     userProvider.updateFollowStatus(newFollowStatus);
     setState(() {
-      moments = momentsList;
+      favoriteMoments = momentsList;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: "Search",
-                    suffixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  onSubmitted: (query) async {
-                    fetchMoments(query);
-                  },
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: moments.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    Moment moment = moments[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: MomentItem(moment),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Favorite Moments"),
+      ),
+      body: RefreshIndicator(
+        onRefresh: fetchFavoriteMoments,
+        child: ListView.builder(
+          itemCount: favoriteMoments.length,
+          itemBuilder: (BuildContext context, int index) {
+            Moment moment = favoriteMoments[index];
+            return MomentItem(moment); // Assuming you have a widget named MomentItem for displaying moments
+          },
         ),
       ),
     );
